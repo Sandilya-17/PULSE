@@ -1,0 +1,13 @@
+create table if not exists users(id serial primary key,username text unique not null,name text not null,bio text default '',pw text not null,created timestamptz default now());
+create table if not exists follows(follower int references users(id) on delete cascade,following int references users(id) on delete cascade,primary key(follower,following));
+create table if not exists conversations(id serial primary key,is_group boolean default false,title text,created timestamptz default now());
+create table if not exists members(conv_id int references conversations(id) on delete cascade,user_id int references users(id) on delete cascade,last_read int default 0,primary key(conv_id,user_id));
+create table if not exists messages(id serial primary key,conv_id int references conversations(id) on delete cascade,sender_id int references users(id),body text default '',media text,created timestamptz default now());
+create index if not exists msg_conv on messages(conv_id,id);
+create table if not exists posts(id serial primary key,user_id int references users(id) on delete cascade,caption text default '',image text,created timestamptz default now());
+create table if not exists likes(post_id int references posts(id) on delete cascade,user_id int references users(id) on delete cascade,primary key(post_id,user_id));
+create table if not exists comments(id serial primary key,post_id int references posts(id) on delete cascade,user_id int references users(id),body text,created timestamptz default now());
+create table if not exists stories(id serial primary key,user_id int references users(id) on delete cascade,media text not null,created timestamptz default now());
+alter table users add column if not exists pubkey text;
+create table if not exists push_subs(endpoint text primary key,user_id int references users(id) on delete cascade,sub text not null);
+create table if not exists files(id uuid primary key,mime text,name text,data bytea not null,created timestamptz default now());

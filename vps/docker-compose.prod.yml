@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16
+    environment: { POSTGRES_USER: pulse, POSTGRES_PASSWORD: "${DB_PASSWORD:-pulse}", POSTGRES_DB: pulse }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    restart: unless-stopped
+  app:
+    build: ..
+    env_file: ../.env
+    environment: { DATABASE_URL: "postgres://pulse:${DB_PASSWORD:-pulse}@db:5432/pulse" }
+    volumes: [uploads:/app/server/uploads]
+    depends_on: [db]
+    restart: unless-stopped
+  caddy:
+    image: caddy:2
+    ports: ["80:80", "443:443"]
+    environment: { DOMAIN: "${DOMAIN:-localhost}" }
+    volumes: ["./Caddyfile:/etc/caddy/Caddyfile", caddy:/data]
+    depends_on: [app]
+    restart: unless-stopped
+  turn:   # TURN relay so calls work across NATs / mobile data (Linux host)
+    image: coturn/coturn
+    network_mode: host
+    command: -n --log-file=stdout --use-auth-secret --static-auth-secret=${TURN_SECRET} --realm=pulse --external-ip=${PUBLIC_IP} --min-port=49160 --max-port=49200 --no-cli
+    restart: unless-stopped
+volumes: { pgdata: {}, uploads: {}, caddy: {} }

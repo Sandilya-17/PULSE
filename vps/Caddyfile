@@ -1,0 +1,4 @@
+# Automatic HTTPS (Let's Encrypt) when DOMAIN is a real domain; local self-signed cert for "localhost"
+{$DOMAIN:localhost} {
+	reverse_proxy app:4000
+}
